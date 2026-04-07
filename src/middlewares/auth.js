@@ -1,0 +1,4 @@
+import {admin} from '../db/firebase.js'
+import sql from '../db/conexao.js'
+export async function autenticar(req,reply){const a=req.headers.authorization;if(!a?.startsWith('Bearer '))return reply.code(401).send({erro:'Token não fornecido'});try{const d=await admin.auth().verifyIdToken(a.slice(7));const [u]=await sql`SELECT u.id,u.firebase_uid,u.nome,u.email,u.perfil,u.ativo FROM usuarios u WHERE u.firebase_uid=${d.uid}`;if(!u)return reply.code(401).send({erro:'Usuário não encontrado'});if(!u.ativo)return reply.code(403).send({erro:'Conta desativada'});req.usuario=u}catch(err){req.log.warn({err},'Token inválido');return reply.code(401).send({erro:'Token inválido ou expirado'})}}
+export function exigirPerfil(...p){return async function(req,reply){if(!p.includes(req.usuario?.perfil))return reply.code(403).send({erro:'Acesso não autorizado'})}}
